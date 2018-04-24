@@ -1,0 +1,127 @@
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+group = 'com.incarcloud'
+archivesBaseName = "incar-vault"
+version = '1.0.0'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    if (project.hasProperty("maven")) {
+        if (maven.equals("maven.aliyun.com"))
+            maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+        else
+            mavenCentral()
+    } else {
+        mavenCentral()
+    }
+}
+
+dependencies {
+    implementation("com.incarcloud:ac-func-tion:1.1.+")
+    implementation("org.slf4j:slf4j-api:1.7.+")
+
+    testImplementation("junit:junit:4.+")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.8.+")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-core:2.8.+")
+}
+
+compileJava{
+    options.encoding = "utf-8"
+    options.compilerArgs << "-Xlint:unchecked"
+}
+
+compileTestJava{
+    options.encoding = "utf-8"
+    options.compilerArgs << "-Xlint:unchecked"
+}
+
+javadoc{
+    options.encoding = "utf-8"
+    options.memberLevel = JavadocMemberLevel.PUBLIC
+}
+
+test{
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+    }
+}
+
+task javadocJar(type: Jar){
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar){
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+signing{
+    if (!project.hasProperty("signing.keyId")){
+        println("Ignore signing")
+        return
+    }
+    sign configurations.archives
+}
+
+uploadArchives {
+    if (!project.hasProperty("ossrhUsername")){
+        println("Ignore uploadArchives")
+        return
+    }
+
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'ac-func-tion'
+                packaging 'jar'
+                // optionally artifactId can be defined here
+                description 'Interfaces like Runnable and Callable, but support accept input arguments'
+                url 'https://github.com/InCar/ac-func-tion'
+
+                scm {
+                    connection 'scm:git:https://github.com/InCar/ac-func-tion.git'
+                    developerConnection 'scm:git:https://github.com/InCar/ac-func-tion.git'
+                    url 'https://github.com/InCar/ac-func-tion'
+                }
+
+                licenses {
+                    license {
+                        name 'MIT License'
+                        url 'https://opensource.org/licenses/mit-license.php'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'incar'
+                        name 'incar'
+                        email 'incar@incarcloud.com'
+                    }
+                }
+            }
+        }
+    }
+}
+
+defaultTasks "assemble"

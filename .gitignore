@@ -1,0 +1,16 @@
+.idea
+.gradle
+.project
+.classpath
+.vscode
+.settings
+
+build
+out
+bin
+
+*.log
+*.out
+*.iml
+
+gradle.properties
