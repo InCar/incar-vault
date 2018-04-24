@@ -35,6 +35,10 @@ public class LimitedSyncTaskTest {
                         System.out.println(sbBuf.toString());
                         sbBuf.delete(0, sbBuf.length());
                     }
+
+                    if(atomCount.get() == 15){
+                        throw new RuntimeException("硬注入异常测试");
+                    }
                 }
             });
             Thread.sleep(10);
