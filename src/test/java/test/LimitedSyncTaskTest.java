@@ -13,15 +13,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LimitedSyncTaskTest {
     @Test
     public void test5Seconds() throws Exception{
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        LimitedSyncTask syncTask = new LimitedSyncTask(pool);
+        LimitedSyncTask syncTask = new LimitedSyncTask();
 
         AtomicBoolean atomStop = new AtomicBoolean(false);
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.schedule(()->{
             atomStop.set(true);
             syncTask.stop();
-            pool.shutdown();
         }, 5, TimeUnit.SECONDS);
         scheduler.shutdown();
 
@@ -42,6 +40,7 @@ public class LimitedSyncTaskTest {
                 }
             });
             Thread.sleep(10);
+
         }
 
         System.out.println(sbBuf.toString());
