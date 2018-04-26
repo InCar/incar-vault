@@ -84,7 +84,7 @@ public class LimitedAsyncTaskTest {
                     objQuit.notify();
                 }
             });
-            
+
             throw new RuntimeException("硬注入异常测试-导致重复onFinished");
         });
 

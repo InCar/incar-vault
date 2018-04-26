@@ -50,6 +50,12 @@ test{
         events "passed", "skipped", "failed"
         showStandardStreams = true
     }
+
+    if(project.hasProperty("testCaseOnly")) {
+        filter {
+            includeTestsMatching testCaseOnly
+        }
+    }
 }
 
 task javadocJar(type: Jar){
