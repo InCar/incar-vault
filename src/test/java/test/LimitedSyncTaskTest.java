@@ -3,7 +3,6 @@ package test;
 import com.incarcloud.concurrent.LimitedSyncTask;
 import org.junit.Test;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -12,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class LimitedSyncTaskTest {
     @Test
-    public void test5Seconds() throws Exception{
+    public void test3Seconds() throws Exception{
         LimitedSyncTask syncTask = new LimitedSyncTask();
 
         AtomicBoolean atomStop = new AtomicBoolean(false);
@@ -20,7 +19,7 @@ public class LimitedSyncTaskTest {
         scheduler.schedule(()->{
             atomStop.set(true);
             syncTask.stop();
-        }, 5, TimeUnit.SECONDS);
+        }, 3, TimeUnit.SECONDS);
         scheduler.shutdown();
 
         AtomicInteger atomCount = new AtomicInteger();
@@ -34,7 +33,7 @@ public class LimitedSyncTaskTest {
                         sbBuf.delete(0, sbBuf.length());
                     }
 
-                    if(atomCount.get() == 15){
+                    if(atomCount.get() == 122){
                         throw new RuntimeException("硬注入异常测试");
                     }
                 }
