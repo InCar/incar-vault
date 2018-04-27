@@ -24,6 +24,10 @@ public abstract class LimitedTask {
     private int _max = 2;
     // 停止标志
     private boolean _bCanStop = false;
+    // 禁止提交任务标志
+    private boolean _bDisableSubmit = false;
+    // 任务完成事件,仅在停止信号发出后才触发
+    private final Object _objTaskFin = new Object();
     // 需要释放线程池
     private final boolean _bNeedShutdown;
     // 当前并发数
@@ -73,15 +77,54 @@ public abstract class LimitedTask {
     }
 
     /**
-     * 停止。
+     * 立即停止。
      * 已经开始执行的任务会继续执行，尚处于排队中的任务不会再被执行
      * 此方法立刻返回，不等待正在执行中的任务执行完成。
+     * @return 尚没开始执行的任务
      */
-    public void stop(){
+    public List<Object> stopASAP(){
         _bCanStop = true;
+        _bDisableSubmit = true;
+
         if(_bNeedShutdown){
             _execSrv.shutdown();
         }
+
+        List<Object> listNotStart = new ArrayList<>(getWaiting());
+        while(true){
+            TaskTracking tracking = _queueTask.poll();
+            if(tracking != null){
+                _queueTaskCount.decrementAndGet();
+                listNotStart.add(tracking.getTask());
+            }
+            else
+                break;
+        }
+        return listNotStart;
+    }
+
+    /**
+     * 停止。
+     * 一直等到所有提交的任务都已经执行完毕才返回
+     */
+    public void stop(){
+        // 禁止提交任务
+        _bDisableSubmit = true;
+
+        // 等待任务完成
+        try {
+            while (true) {
+                synchronized (_objTaskFin) {
+                    _objTaskFin.wait(1000);
+                }
+                if(getWaiting() == 0 && getRunning() == 0) break;
+            }
+        }
+        catch (InterruptedException ex){
+            s_logger.warn(Helper.printStackTrace(ex));
+        }
+
+        stopASAP();
     }
 
     /**
@@ -133,6 +176,8 @@ public abstract class LimitedTask {
 
     // 排队任务
     protected void queueTask(TaskTracking tracking){
+        if(_bDisableSubmit) throw new IllegalStateException("已经调用了stop()方法,禁止提交任务");
+
         _queueTask.add(tracking);
         _queueTaskCount.incrementAndGet();
         dispatch();
@@ -149,11 +194,19 @@ public abstract class LimitedTask {
             if(nOnWorking < 0){
                 s_logger.warn("并发数异常: {}", nOnWorking);
             }
+
             // 由于返还了并发数，可以再次分配新任务
             dispatch();
             // 性能计数
             long tmNow = System.currentTimeMillis();
             _perf.put(tracking.getExecTM() - tracking.getCreatedTM(), tmNow - tracking.getExecTM());
+
+            // 如果已经触发停止,让退出例程检测是否可以停止
+            if(_bDisableSubmit){
+                synchronized (_objTaskFin) {
+                    _objTaskFin.notify();
+                }
+            }
         }
     }
 

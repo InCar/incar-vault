@@ -4,6 +4,8 @@ import com.incarcloud.concurrent.LimitedAsyncTask;
 import com.incarcloud.concurrent.PerfMetric;
 import com.incarcloud.concurrent.TaskTracking;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -14,6 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class LimitedAsyncTaskTest {
+    private static final Logger s_logger = LoggerFactory.getLogger(LimitedAsyncTaskTest.class);
+
     @Test
     public void test5Seconds() throws Exception{
         ExecutorService pool = Executors.newFixedThreadPool(8);
@@ -39,15 +43,15 @@ public class LimitedAsyncTaskTest {
                 pool.submit(()->{
                     synchronized (atomCount) {
                         sbBuf.append(String.format("%4s", String.format("%X ", atomCount.get())));
-                        if (atomCount.get() % 16 == 0){
-                            System.out.println(sbBuf.toString());
+                        if (atomCount.get() % 8 == 0){
+                            s_logger.info(sbBuf.toString());
                             sbBuf.delete(0, sbBuf.length());
                         }
                     }
 
                     if(atomCount.get() == 24){
                         String strInject = "硬注入异常测试-导致长时间任务";
-                        System.out.println(strInject);
+                        s_logger.info(strInject);
                         throw new RuntimeException(strInject);
                     }
 
@@ -64,8 +68,6 @@ public class LimitedAsyncTaskTest {
                 printMetric(asyncTask);
             }
         }
-
-        System.out.println(sbBuf.toString());
     }
 
     @Test
@@ -98,24 +100,7 @@ public class LimitedAsyncTaskTest {
 
     private void printMetric(LimitedAsyncTask asyncTask){
         PerfMetric<Long> metric = asyncTask.queryPerfMetric();
-        System.out.println(
-                String.format("-----perf-----\n" +
-                                "Perf: %6.2f Hz | Running: %d | Waiting: %d | Finished: %d\n" +
-                                "Running avg:%6.3fs | min:%4dms | max:%4dms\n" +
-                                "Waiting avg:%6.3fs | min:%4dms | max:%4dms",
-                        asyncTask.queryPerf(),
-                        asyncTask.getRunning(),
-                        asyncTask.getWaiting(),
-                        metric.getFinishedTask(),
-
-                        metric.getPerfRunning().getAvg() / 1000.0f,
-                        metric.getPerfRunning().getMin(),
-                        metric.getPerfRunning().getMax(),
-
-                        metric.getPerfWaiting().getAvg() / 1000.0f,
-                        metric.getPerfWaiting().getMin(),
-                        metric.getPerfWaiting().getMax()
-                ));
+        s_logger.info(LimitedTaskTest.printMetric(asyncTask));
 
         List<TaskTracking> listLTT = asyncTask.scanForLongTimeTask(1000);
         if (listLTT != null) {
@@ -126,8 +111,7 @@ public class LimitedAsyncTaskTest {
                 float fT = (tmNow - tracking.getExecTM()) / 1000.0f;
                 sbLTT.append(String.format("\t%4.2fs %s", fT, tracking.getTask()));
             }
-            System.out.println(sbLTT.toString());
+            s_logger.info("{}\n", sbLTT.toString());
         }
-        System.out.println("-----++++-----");
     }
 }

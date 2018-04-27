@@ -1,5 +1,7 @@
 package com.incarcloud.concurrent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -22,7 +24,6 @@ public class LimitedSyncTask extends LimitedTask {
     public LimitedSyncTask(ExecutorService execSrv){
         super(execSrv);
     }
-
 
     /**
      * 提交同步任务
