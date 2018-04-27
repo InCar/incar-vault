@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 目的是保护相关联的部分不至于过载，软件系统往往存在最在容量/性能限制，如果
  * 超过限制，性能往往会急剧下降。
  */
-abstract class LimitedTask {
+public abstract class LimitedTask {
     private Logger s_logger = LoggerFactory.getLogger(LimitedTask.class);
 
     // 最大并发数,可以在运行时动态调整
@@ -26,17 +26,14 @@ abstract class LimitedTask {
     private boolean _bCanStop = false;
     // 需要释放线程池
     private final boolean _bNeedShutdown;
-
     // 当前并发数
     private final AtomicInteger _atomOnWorking = new AtomicInteger();
-
     // 任务队列
-    private final ConcurrentLinkedQueue<Object> _queueTask = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<TaskTracking> _queueTask = new ConcurrentLinkedQueue<>();
     // 任务队列计数，派生类的任务队列由Queue构成,size()会遍历整个队列，性能较低
     private final AtomicInteger _queueTaskCount = new AtomicInteger();
     // 任务跟踪
-    private final ConcurrentHashMap<Object, TaskTracking> _mapOnWaiting = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Object, TaskTracking> _mapOnWorking = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<TaskTracking, TaskTracking> _mapOnWorking = new ConcurrentHashMap<>();
     // 线程池
     private final ExecutorService _execSrv;
     // 性能计数器
@@ -87,17 +84,6 @@ abstract class LimitedTask {
         }
     }
 
-    // 提交任务
-    protected void submit(Object task){
-        if(task == null) throw new NullPointerException("task");
-
-        // 一定要先准备跟踪对象
-        _mapOnWaiting.put(task, new TaskTracking(task));
-        _queueTask.add(task);
-        _queueTaskCount.incrementAndGet();
-        dispatch();
-    }
-
     /**
      * 正在执行中的任务数量
      * @return 正在执行中的任务数量
@@ -132,13 +118,44 @@ abstract class LimitedTask {
 
     /**
      * 查询性能.两次调用之间的数据进行累积求平均，调用越频繁，瞬时性
-     * 越高，但精确性越差；调用越缓慢，瞬时性越差，但精确性越高
+     * 越高，但精确性越差；反之则瞬时性差而精确性高
      * @return 每秒执行多少个任务(Hz)
      */
     public float queryPerf(){
         return _perf.calcPerfAndReset();
     }
+
+    /**
+     * 已经执行完毕的任务统计
+     * @return 已经执行任务总数，等待时间(最小最大平均值)，执行时间(最小最大平均值)
+     */
     public PerfMetric<Long> queryPerfMetric(){ return _perf.calcPerfMetric(); }
+
+    // 排队任务
+    protected void queueTask(TaskTracking tracking){
+        _queueTask.add(tracking);
+        _queueTaskCount.incrementAndGet();
+        dispatch();
+    }
+
+    // 结束任务
+    protected void finishTask(TaskTracking tracking){
+        // 从正在执行的任务里移除
+        if(_mapOnWorking.remove(tracking) == null){
+            s_logger.warn("可能重复调用了onFinished.run()方法 {}", tracking.getTask());
+        }else {
+            // 归还并发容量
+            int nOnWorking = _atomOnWorking.decrementAndGet();
+            if(nOnWorking < 0){
+                s_logger.warn("并发数异常: {}", nOnWorking);
+            }
+            // 由于返还了并发数，可以再次分配新任务
+            dispatch();
+            // 性能计数
+            long tmNow = System.currentTimeMillis();
+            _perf.put(tracking.getExecTM() - tracking.getCreatedTM(), tmNow - tracking.getExecTM());
+        }
+    }
 
     // 分配任务到线程，返回当前的并发数
     private int dispatch() {
@@ -152,16 +169,14 @@ abstract class LimitedTask {
             if(_atomOnWorking.compareAndSet(nOnWorking, nOnWorking+1)){
                 // 成功保留了并发容量,尝试启动任务
                 try {
-                    Object task = _queueTask.poll();
-                    if(task != null) {
+                    TaskTracking tracking = _queueTask.poll();
+                    if(tracking != null) {
                         // 扣减排队任务数量
                         _queueTaskCount.decrementAndGet();
                         // 任务跟踪
-                        TaskTracking tracking = _mapOnWaiting.remove(task);
-                        tracking.markExecTM();
-                        _mapOnWorking.put(task, tracking);
+                        _mapOnWorking.put(tracking, tracking);
                         // 执行任务
-                        assignTask(task);
+                        _execSrv.submit(tracking::run);
                         // 性能计数
                         _perf.increasePerfCount();
                         nOnWorking++;
@@ -194,31 +209,5 @@ abstract class LimitedTask {
         }
 
         return nOnWorking;
-    }
-
-    // 分配任务给线程池
-    protected void assignTask(Object task){
-        Runnable taskWrap = (Runnable)task;
-        _execSrv.submit(taskWrap);
-    }
-
-    // 任务结束后的清理动作
-    protected void taskFinished(Object task){
-        // 从正在执行的任务里移除
-        TaskTracking tracking = _mapOnWorking.remove(task);
-        if(tracking == null){
-            s_logger.warn("可能重复调用了onFinished.run()方法 {}", task);
-        }else {
-            // 归还并发容量
-            int nOnWorking = _atomOnWorking.decrementAndGet();
-            if(nOnWorking < 0){
-                s_logger.warn("并发数异常: {}", nOnWorking);
-            }
-            // 由于返还了并发数，可以再次分配新任务
-            dispatch();
-            // 性能计数
-            long tmNow = System.currentTimeMillis();
-            _perf.put(tracking.getExecTM() - tracking.getCreatedTM(), tmNow - tracking.getExecTM());
-        }
     }
 }

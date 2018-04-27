@@ -29,13 +29,7 @@ public class LimitedSyncTask extends LimitedTask {
      * @param task 同步任务
      */
     public void submit(Runnable task){
-        super.submit(task);
-    }
-
-    // 分配任务给线程池
-    @Override
-    protected void assignTask(Object task){
-        Runnable syncTask = (Runnable)task;
-        super.assignTask(new SyncTaskWrap(syncTask, super::taskFinished));
+        SyncTaskTracking tracking = new SyncTaskTracking(task, this::finishTask);
+        queueTask(tracking);
     }
 }

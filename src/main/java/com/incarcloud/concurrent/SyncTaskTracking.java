@@ -6,27 +6,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // 确保同步任务执行完成后,结束动作一定能被调用
-class SyncTaskWrap implements Runnable{
-    private static final Logger s_logger = LoggerFactory.getLogger(SyncTaskWrap.class);
+class SyncTaskTracking extends TaskTracking<Runnable>{
+    private static final Logger s_logger = LoggerFactory.getLogger(SyncTaskTracking.class);
 
-    private final Runnable _task;
-    private final Action<Runnable> _actTaskFinished;
-
-    SyncTaskWrap(Runnable task, Action<Runnable> actTaskFinished){
-        _task = task;
-        _actTaskFinished = actTaskFinished;
+    SyncTaskTracking(Runnable task, Action<TaskTracking> actTaskFinished){
+        super(task, actTaskFinished);
     }
 
     @Override
     public void run() {
         try {
+            markExecTM();
             _task.run();
         }
         catch (Exception ex){
             s_logger.error(Helper.printStackTrace(ex));
         }
         finally {
-            _actTaskFinished.run(_task);
+            markFinished();
         }
     }
 }

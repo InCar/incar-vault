@@ -28,13 +28,7 @@ public class LimitedAsyncTask extends LimitedTask{
      * @param task 异步任务
      */
     public void submit(AsyncTask task){
-        super.submit(task);
-    }
-
-    // 分配任务给线程池
-    @Override
-    protected void assignTask(Object task){
-        AsyncTask asyncTask = (AsyncTask)task;
-        super.assignTask(new AsyncTaskWrap(asyncTask, super::taskFinished));
+        AsyncTaskTracking tracking = new AsyncTaskTracking(task, this::finishTask);
+        queueTask(tracking);
     }
 }
