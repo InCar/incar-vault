@@ -9,8 +9,8 @@ public class LimitedSyncArgTaskTest {
     private static final Logger s_logger = LoggerFactory.getLogger(LimitedSyncArgTaskTest.class);
 
     @Test
-    public void testArg100(){
-        int max = 10000;
+    public void testArg10k(){
+        int max = 1000*10;
 
         LimitedSyncArgTask<Integer> syncArgTask = new LimitedSyncArgTask<>((x)->{
             // s_logger.info("{}", x);

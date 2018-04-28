@@ -6,11 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LimitedAsyncArgTaskTest {
-    private static final Logger s_logger = LoggerFactory.getLogger(LimitedSyncArgTaskTest.class);
+    private static final Logger s_logger = LoggerFactory.getLogger(LimitedAsyncArgTaskTest.class);
 
     @Test
-    public void testArg100(){
-        int max = 10000;
+    public void testArg10k(){
+        int max = 1000*10;
 
         LimitedAsyncArgTask<Integer> syncArgTask = new LimitedAsyncArgTask<>((x, onFin)->{
             // s_logger.info("{}", x);

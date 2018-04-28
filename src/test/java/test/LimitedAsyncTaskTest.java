@@ -1,7 +1,6 @@
 package test;
 
 import com.incarcloud.concurrent.LimitedAsyncTask;
-import com.incarcloud.concurrent.PerfMetric;
 import com.incarcloud.concurrent.TaskTracking;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -19,23 +18,60 @@ public class LimitedAsyncTaskTest {
     private static final Logger s_logger = LoggerFactory.getLogger(LimitedAsyncTaskTest.class);
 
     @Test
-    public void test5Seconds() throws Exception{
-        ExecutorService pool = Executors.newFixedThreadPool(8);
+    public void test3Seconds(){
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        ExecutorService pool = Executors.newFixedThreadPool(4);
         LimitedAsyncTask asyncTask = new LimitedAsyncTask(pool);
 
-        AtomicBoolean atomStop = new AtomicBoolean(false);
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.schedule(()->{
-            atomStop.set(true);
-            asyncTask.stop();
-            pool.shutdown();
-        }, 5, TimeUnit.SECONDS);
-        scheduler.shutdown();
+        AtomicBoolean atomExit = new AtomicBoolean(false);
 
-        int i = 0;
+        scheduler.schedule(()->{
+                atomExit.set(true);
+        }, 3, TimeUnit.SECONDS);
+
+        int i=0;
         AtomicInteger atomCount = new AtomicInteger();
         StringBuilder sbBuf = new StringBuilder();
-        while(!atomStop.get()){
+        while(!atomExit.get()){
+            i++;
+            asyncTask.submit((onFinished -> {
+                int n = atomCount.incrementAndGet();
+                synchronized (sbBuf) {
+                    sbBuf.append(String.format("%4s", String.format("%X ", n)));
+                    if (n % 8 == 0) {
+                        s_logger.info(sbBuf.toString());
+                        sbBuf.delete(0, sbBuf.length());
+                    }
+                }
+                scheduler.schedule(onFinished,10, TimeUnit.MILLISECONDS);
+            }));
+
+            try{
+                Thread.sleep(10);
+            }catch (Exception ex){
+                // ignore
+            }
+        }
+
+        asyncTask.stop();
+        pool.shutdown();
+        scheduler.shutdown();
+
+        s_logger.info(LimitedTaskTest.printMetric(asyncTask));
+    }
+
+    @Test
+    public void testLongTimeTask() throws Exception{
+        /*
+          需要侦测到长时间任务
+         */
+        ExecutorService pool = Executors.newFixedThreadPool(4);
+        LimitedAsyncTask asyncTask = new LimitedAsyncTask(pool);
+
+        int i = 0, nDectected = 0;
+        AtomicInteger atomCount = new AtomicInteger();
+        StringBuilder sbBuf = new StringBuilder();
+        while(true){
             i++;
             asyncTask.submit((onFinished)->{
                 atomCount.incrementAndGet();
@@ -44,7 +80,7 @@ public class LimitedAsyncTaskTest {
                     synchronized (atomCount) {
                         sbBuf.append(String.format("%4s", String.format("%X ", atomCount.get())));
                         if (atomCount.get() % 8 == 0){
-                            s_logger.info(sbBuf.toString());
+                            // s_logger.info(sbBuf.toString());
                             sbBuf.delete(0, sbBuf.length());
                         }
                     }
@@ -57,7 +93,9 @@ public class LimitedAsyncTaskTest {
 
                     try {
                         Thread.sleep(20);
-                    }catch (Exception e){}
+                    }catch (Exception e){
+                        // ignore
+                    }
 
                     onFinished.run();
                 });
@@ -65,15 +103,37 @@ public class LimitedAsyncTaskTest {
             Thread.sleep(10);
 
             if(i % 100 == 0) {
-                printMetric(asyncTask);
+                LimitedTaskTest.printMetric(asyncTask);
+
+                List<TaskTracking> listLTT = asyncTask.scanForLongTimeTask(1000);
+                if (listLTT != null) {
+                    nDectected++;
+                    StringBuilder sbLTT = new StringBuilder();
+                    sbLTT.append("Long time task:\n");
+                    long tmNow = System.currentTimeMillis();
+                    for (TaskTracking tracking : listLTT) {
+                        float fT = (tmNow - tracking.getExecTM()) / 1000.0f;
+                        sbLTT.append(String.format("\t%4.2fs %s", fT, tracking.getTask()));
+                    }
+                    s_logger.warn("{}\n", sbLTT.toString());
+                }
+
+                // stop testing
+                if(nDectected >= 2 || i >= 1000)
+                    break;
             }
         }
+
+        asyncTask.stopASAP();
+        pool.shutdownNow();
+        s_logger.info(LimitedTaskTest.printMetric(asyncTask));
     }
 
     @Test
     public void testDuplicateOnFinished() throws Exception{
-        /**
+        /*
          * 导致重复调用onFinished
+         * 日志里应该会打印一行WARN
          */
         Object objQuit  = new Object();
         ExecutorService pool = Executors.newFixedThreadPool(2);
@@ -98,20 +158,5 @@ public class LimitedAsyncTaskTest {
         pool.shutdown();
     }
 
-    private void printMetric(LimitedAsyncTask asyncTask){
-        PerfMetric<Long> metric = asyncTask.queryPerfMetric();
-        s_logger.info(LimitedTaskTest.printMetric(asyncTask));
 
-        List<TaskTracking> listLTT = asyncTask.scanForLongTimeTask(1000);
-        if (listLTT != null) {
-            StringBuilder sbLTT = new StringBuilder();
-            sbLTT.append("Long time task:\n");
-            long tmNow = System.currentTimeMillis();
-            for (TaskTracking tracking : listLTT) {
-                float fT = (tmNow - tracking.getExecTM()) / 1000.0f;
-                sbLTT.append(String.format("\t%4.2fs %s", fT, tracking.getTask()));
-            }
-            s_logger.info("{}\n", sbLTT.toString());
-        }
-    }
 }

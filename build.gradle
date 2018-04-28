@@ -22,12 +22,11 @@ repositories {
 }
 
 dependencies {
-    implementation("com.incarcloud:ac-func-tion:1.1.+")
-    implementation("org.slf4j:slf4j-api:1.7.+")
+    implementation("com.incarcloud:ac-func-tion:1.1.0")
+    implementation("org.slf4j:slf4j-api:1.7.25")
 
-    testImplementation("junit:junit:4.+")
-    testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.8.+")
-    testRuntimeOnly("org.apache.logging.log4j:log4j-core:2.8.+")
+    testImplementation("junit:junit:4.12")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.8.2")
 }
 
 compileJava{
