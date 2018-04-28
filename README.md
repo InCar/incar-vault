@@ -13,6 +13,11 @@
 </dependency>
 ```
 
+## Wiki
+本项目包含的内容参考wiki
+
+https://github.com/InCar/incar-vault/wiki
+
 ## prerequisite
 - [JDK 1.8+](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 - [Gradle 4.5+](http://gradle.org/gradle-download/)
