@@ -8,7 +8,7 @@
 ```xml
 <dependency>
     <groupId>com.incarcloud</groupId>
-    <artifactId>incar-valut</artifactId>
+    <artifactId>incar-vault</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
