@@ -17,8 +17,6 @@ class PerfCount {
     private final AtomicInteger _atomCount = new AtomicInteger();
 
     PerfCount(){
-        _mmsWaiting.init(0L, Long.MAX_VALUE);
-        _mmsRunning.init(0L, Long.MAX_VALUE);
     }
 
     // 性能计数器数值增加1
@@ -44,7 +42,7 @@ class PerfCount {
     }
 
     // 计算任务等待时长和运行时长
-    PerfMetric<Long> calcPerfMetric(){
+    PerfMetric<Long> calcPerfMetricAndReset(){
         PerfMetric<Long> metric = new PerfMetric<>();
 
         synchronized (_atomCount) {
@@ -55,6 +53,11 @@ class PerfCount {
             metric.getPerfRunning().put(
                     _mmsRunning.getMin(), _mmsRunning.getMax(),
                     metric.getFinishedTask(), _mmsRunning.getSum());
+
+            // 重置计数器
+            _atomCount.set(0);
+            _mmsWaiting.reset();
+            _mmsRunning.reset();
         }
         return metric;
     }

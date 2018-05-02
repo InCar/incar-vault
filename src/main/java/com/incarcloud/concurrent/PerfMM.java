@@ -4,18 +4,8 @@ package com.incarcloud.concurrent;
  * 性能计数 最大值 最小值
  */
 public class PerfMM<T extends Comparable<T>> {
-    protected T _min;
-    protected T _max;
-
-    /**
-     * 初始化
-     * @param min 可能的最小的数值
-     * @param max 可能的最大的数值
-     */
-    public void init(T min, T max){
-        _min = max;
-        _max = min;
-    }
+    protected T _min = null;
+    protected T _max = null;
 
     /**
      * 最大值

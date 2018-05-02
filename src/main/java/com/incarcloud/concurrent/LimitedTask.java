@@ -172,7 +172,7 @@ public abstract class LimitedTask {
      * 已经执行完毕的任务统计
      * @return 已经执行任务总数，等待时间(最小最大平均值)，执行时间(最小最大平均值)
      */
-    public PerfMetric<Long> queryPerfMetric(){ return _perf.calcPerfMetric(); }
+    public PerfMetric<Long> queryPerfMetric(){ return _perf.calcPerfMetricAndReset(); }
 
     // 排队任务
     protected void queueTask(TaskTracking tracking){

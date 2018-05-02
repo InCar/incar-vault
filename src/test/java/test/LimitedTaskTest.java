@@ -17,12 +17,12 @@ class LimitedTaskTest {
                 metric.getFinishedTask(),
 
                 metric.getPerfRunning().getAvg() / 1000.0f,
-                metric.getPerfRunning().getMin(),
-                metric.getPerfRunning().getMax(),
+                metric.getPerfRunning().getMin() == null ? -1L:metric.getPerfRunning().getMin(),
+                metric.getPerfRunning().getMax() == null ? -1L:metric.getPerfRunning().getMax(),
 
                 metric.getPerfWaiting().getAvg() / 1000.0f,
-                metric.getPerfWaiting().getMin(),
-                metric.getPerfWaiting().getMax()
+                metric.getPerfWaiting().getMin() == null ? -1L:metric.getPerfWaiting().getMin(),
+                metric.getPerfWaiting().getMax() == null ? -1L:metric.getPerfWaiting().getMax()
         );
     }
 }
