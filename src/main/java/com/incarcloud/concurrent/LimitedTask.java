@@ -169,7 +169,8 @@ public abstract class LimitedTask {
     }
 
     /**
-     * 已经执行完毕的任务统计
+     * 已经执行完毕的任务统计.两次调用之间的数据进行累积求平均，调用越频繁，瞬时性
+     *      * 越高，但精确性越差；反之则瞬时性差而精确性高
      * @return 已经执行任务总数，等待时间(最小最大平均值)，执行时间(最小最大平均值)
      */
     public PerfMetric<Long> queryPerfMetric(){ return _perf.calcPerfMetricAndReset(); }
