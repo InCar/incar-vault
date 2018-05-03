@@ -1,5 +1,5 @@
 
-apply plugin: 'java'
+apply plugin: 'java-library'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
@@ -11,22 +11,20 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-    if (project.hasProperty("maven")) {
-        if (maven.equals("maven.aliyun.com"))
-            maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
-        else
-            mavenCentral()
-    } else {
+    if (project.hasProperty("maven") && maven.equals("maven.aliyun.com"))
+            maven { url = 'http://maven.aliyun.com/nexus/content/groups/public/' }
+    else
         mavenCentral()
-    }
 }
 
 dependencies {
-    implementation("com.incarcloud:ac-func-tion:1.1.0")
+    api("com.incarcloud:ac-func-tion:1.1.0")
+
     implementation("org.slf4j:slf4j-api:1.7.25")
 
     testImplementation("junit:junit:4.12")
-    testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.8.2")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.11.0")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-core:2.11.0")
 }
 
 compileJava{
