@@ -150,7 +150,7 @@ public abstract class LimitedTask {
         long tmNow = System.currentTimeMillis();
 
         for(TaskTracking tracking:_mapOnWorking.values()){
-            if(tmNow - tracking.getExecTM() > msMax){
+            if(tracking.getExecTM() > 0 && tmNow - tracking.getExecTM() > msMax){
                 if(listTracking == null) listTracking = new ArrayList<>();
                 listTracking.add(tracking);
             }

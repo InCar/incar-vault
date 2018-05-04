@@ -9,7 +9,7 @@
 <dependency>
     <groupId>com.incarcloud</groupId>
     <artifactId>incar-vault</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -34,3 +34,6 @@ Users from China can copy [gradle-sample.properties](https://github.com/InCar/ac
 ```SHELL
 gradle assemble
 ```
+
+## License
+MIT
