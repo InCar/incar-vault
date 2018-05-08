@@ -34,7 +34,7 @@ public class Helper {
     }
 
     /**
-     * 把数值格式化为以k M G为单位的字符串。比如 format(1024.6f, "%1.3f") -> "1.024k"
+     * 把数值格式化为以k M G为单位的字符串。比如 format(1024.6f, "%1.3f") -&gt; "1.024k"
      * @param fVal 被格式化的数值
      * @param fmt 输出格式
      * @return 格式化后的字符串
