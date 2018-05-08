@@ -32,4 +32,25 @@ public class Helper {
             return result;
         }
     }
+
+    /**
+     * 把数值格式化为以k M G为单位的字符串。比如 format(1024.6f, "%1.3f") -> "1.024k"
+     * @param fVal 被格式化的数值
+     * @param fmt 输出格式
+     * @return 格式化后的字符串
+     */
+    public static String formatkMG(float fVal, String fmt){
+        int kilo = 0;
+        while(fVal > 900.0f && kilo < 3) {
+            fVal /= 1000.0f;
+            kilo++;
+        }
+
+        String unit = "";
+        if(kilo == 1) unit = "k";
+        else if(kilo == 2) unit = "M";
+        else if(kilo == 3) unit = "G";
+
+        return String.format(fmt, fVal) + unit;
+    }
 }
