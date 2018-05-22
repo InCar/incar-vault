@@ -252,10 +252,10 @@ public abstract class LimitedTask {
                 // 保留并发容量失败，重试
                 nOnWorking = _atomOnWorking.get();
                 // 极端意外情况保护
-                if(nRetry > 1000*100){
+                if(nRetry > 1000){
                     if(nRetry % (1000*10) == 0)
                         s_logger.warn("保留并发容量失败,已尝试{}次", nRetry);
-                    if(nRetry > 1000*1000){
+                    if(nRetry > 1000*100){
                         throw new IllegalStateException("无法保留并发容量");
                     }
                 }
