@@ -24,6 +24,6 @@ public class LimitedAsyncArgTaskTest {
 
         syncArgTask.stop();
 
-        s_logger.info(LimitedTaskTest.printMetric(syncArgTask));
+        s_logger.info("\n{}", LimitedAsyncArgTask.printMetric(syncArgTask, 0));
     }
 }

@@ -57,7 +57,7 @@ public class LimitedAsyncTaskTest {
         pool.shutdown();
         scheduler.shutdown();
 
-        s_logger.info(LimitedTaskTest.printMetric(asyncTask));
+        s_logger.info("\n{}", LimitedAsyncTask.printMetric(asyncTask, 0));
     }
 
     @Test
@@ -103,8 +103,6 @@ public class LimitedAsyncTaskTest {
             Thread.sleep(10);
 
             if(i % 100 == 0) {
-                LimitedTaskTest.printMetric(asyncTask);
-
                 List<TaskTracking> listLTT = asyncTask.scanForLongTimeTask(1000);
                 if (listLTT != null) {
                     nDectected++;
@@ -126,7 +124,7 @@ public class LimitedAsyncTaskTest {
 
         asyncTask.stopASAP();
         pool.shutdownNow();
-        s_logger.info(LimitedTaskTest.printMetric(asyncTask));
+        s_logger.info("\n{}", LimitedAsyncTask.printMetric(asyncTask, 1000));
     }
 
     @Test

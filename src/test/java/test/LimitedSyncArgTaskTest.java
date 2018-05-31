@@ -23,7 +23,7 @@ public class LimitedSyncArgTaskTest {
 
         syncArgTask.stop();
 
-        s_logger.info(LimitedTaskTest.printMetric(syncArgTask));
+        s_logger.info("\n{}", LimitedSyncArgTask.printMetric(syncArgTask, 0));
     }
 
 

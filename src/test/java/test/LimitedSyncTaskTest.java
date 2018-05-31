@@ -42,7 +42,7 @@ public class LimitedSyncTaskTest {
         }
 
         syncTask.stop();
-        s_logger.info(LimitedTaskTest.printMetric(syncTask));
+        s_logger.info("\n{}", LimitedSyncTask.printMetric(syncTask, 0));
     }
 
     @Test
@@ -71,6 +71,6 @@ public class LimitedSyncTaskTest {
 
         syncTask.stopASAP();
         Assert.assertTrue(syncTask.queryPerfMetric().getFinishedTask() >= 32);
-        s_logger.info(LimitedTaskTest.printMetric(syncTask));
+        s_logger.info("\n{}", LimitedSyncTask.printMetric(syncTask, 0));
     }
 }
