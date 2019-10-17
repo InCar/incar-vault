@@ -238,14 +238,15 @@ public abstract class LimitedTask {
                     else {
                         // 队列中没有任务了,返还并发容量
                         _atomOnWorking.decrementAndGet();
+                        break;
                     }
                 }
                 catch (Exception ex){
                     // 启动任务失败,释放并发容量
                     _atomOnWorking.decrementAndGet();
                     s_logger.error(Helper.printStackTrace(ex));
+                    break;
                 }
-                break;
             }
             else{
                 nRetry++;

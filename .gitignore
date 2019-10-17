@@ -12,5 +12,6 @@ bin
 *.log
 *.out
 *.iml
+*.gpg
 
 gradle.properties
