@@ -96,16 +96,16 @@ uploadArchives {
             }
 
             pom.project {
-                name 'ac-func-tion'
+                name 'incar-vault'
                 packaging 'jar'
                 // optionally artifactId can be defined here
-                description 'Interfaces like Runnable and Callable, but support accept input arguments'
-                url 'https://github.com/InCar/ac-func-tion'
+                description 'Components extracted from projects'
+                url 'https://github.com/InCar/incar-vault'
 
                 scm {
-                    connection 'scm:git:https://github.com/InCar/ac-func-tion.git'
-                    developerConnection 'scm:git:https://github.com/InCar/ac-func-tion.git'
-                    url 'https://github.com/InCar/ac-func-tion'
+                    connection 'scm:git:https://github.com/InCar/incar-vault.git'
+                    developerConnection 'scm:git:https://github.com/InCar/incar-vault.git'
+                    url 'https://github.com/InCar/incar-vault'
                 }
 
                 licenses {
