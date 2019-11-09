@@ -34,6 +34,6 @@ public class SetMaxTest {
         s_logger.info("Running ====> {}", nRunning);
 
         syncArgTask.stop();
-        s_logger.info("\n{}", LimitedSyncArgTask.printMetric(syncArgTask, 0));
+        s_logger.info("\n{}", LimitedSyncArgTask.printMetric(syncArgTask, 0, "dynamic max"));
     }
 }
