@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -36,6 +33,10 @@ public abstract class LimitedTask {
     private final ConcurrentLinkedQueue<TaskTracking> _queueTask = new ConcurrentLinkedQueue<>();
     // 任务队列计数，派生类的任务队列由Queue构成,size()会遍历整个队列，性能较低
     private final AtomicInteger _queueTaskCount = new AtomicInteger();
+    // 用于限制排队任务的最大容量
+    private Semaphore _semaTaskCapacity = null;
+    // 排队任务最大容量
+    private int _capacity = 0;
     // 任务跟踪
     private final ConcurrentHashMap<TaskTracking, TaskTracking> _mapOnWorking = new ConcurrentHashMap<>();
     // 线程池
@@ -74,6 +75,25 @@ public abstract class LimitedTask {
     public void setMax(int val){
         _max = val;
         dispatch();
+    }
+
+    /**
+     * 获取排队任务的最大容量
+     * @return 任务的最大容量,0表示没有限制
+     */
+    public int getCapacity(){
+        return _capacity;
+    }
+
+    /**
+     * 设置排队任务的最大容量,不可以在运行时动态调整,默认不限制最大排队容量
+     * @param capacity 排队任务的最大容量
+     */
+    public void setCapacity(int capacity){
+        if(capacity <= 0) throw new IllegalArgumentException();
+        if(_semaTaskCapacity != null) throw new IllegalStateException();
+        _semaTaskCapacity = new Semaphore(capacity);
+        _capacity = capacity;
     }
 
     /**
@@ -179,6 +199,9 @@ public abstract class LimitedTask {
     protected void queueTask(TaskTracking tracking){
         if(_bDisableSubmit) throw new IllegalStateException("已经调用了stop()方法,禁止提交任务");
 
+        // 如果限定了排队任务容量,则在到达限定容量后阻塞
+        if(_capacity > 0) _semaTaskCapacity.acquireUninterruptibly();
+
         _queueTask.add(tracking);
         _queueTaskCount.incrementAndGet();
         dispatch();
@@ -227,6 +250,7 @@ public abstract class LimitedTask {
                     if(tracking != null) {
                         // 扣减排队任务数量
                         _queueTaskCount.decrementAndGet();
+                        if(_capacity > 0) _semaTaskCapacity.release();
                         // 任务跟踪
                         _mapOnWorking.put(tracking, tracking);
                         // 执行任务

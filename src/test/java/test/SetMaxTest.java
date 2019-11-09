@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 public class SetMaxTest {
 
-    private static final Logger s_logger = LoggerFactory.getLogger(LimitedSyncArgTaskTest.class);
+    private static final Logger s_logger = LoggerFactory.getLogger(SetMaxTest.class);
 
     @Test
     public void testSetMax4(){
