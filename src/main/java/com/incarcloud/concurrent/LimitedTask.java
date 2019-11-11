@@ -160,6 +160,33 @@ public abstract class LimitedTask {
     public int getWaiting(){ return _queueTaskCount.get(); }
 
     /**
+     * 清除等待执行中的任务
+     * 可以在运行中执行,用于等待队列过多时的紧急处理
+     * @param max 至多清除任务的数目,0代表清除全部
+     * @return 已经从等待队列中清除的任务
+     */
+    public List<Object> dropWaiting(int max){
+        int count = getWaiting();
+        if(max > 0 && max < count){
+            count = max;
+        }
+
+        // 同时会有新任务被提交,或被调度进执行队列,是一个动态行为
+        List<Object> listNotStart = new ArrayList<>(count);
+        while(count > 0){
+            TaskTracking tracking = _queueTask.poll();
+            if(tracking != null){
+                _queueTaskCount.decrementAndGet();
+                count--;
+                listNotStart.add(tracking.getTask());
+            }
+            else
+                break;
+        }
+        return listNotStart;
+    }
+
+    /**
      * 扫描长时间运行的任务
      * 不宜过于频繁扫描
      * @param msMax 毫秒，执行时间超过的任务会被扫描出来
