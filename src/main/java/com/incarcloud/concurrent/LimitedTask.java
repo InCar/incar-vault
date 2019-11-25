@@ -73,8 +73,9 @@ public abstract class LimitedTask {
      * @param val 最大并发数
      */
     public void setMax(int val){
+        boolean bRequireDispatching = (val > _max);
         _max = val;
-        dispatch();
+        if(bRequireDispatching) dispatch();
     }
 
     /**

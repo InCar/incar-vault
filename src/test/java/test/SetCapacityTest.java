@@ -39,6 +39,11 @@ public class SetCapacityTest {
         Assert.assertEquals(3, syncArgTask.getWaiting());
 
         syncArgTask.setMax(1);
+        try {
+            threadSubmit.join(3 * 1000);
+        }catch (InterruptedException ex){
+
+        }
         syncArgTask.stop();
     }
 }
