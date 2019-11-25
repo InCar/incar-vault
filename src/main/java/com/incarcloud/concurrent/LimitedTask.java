@@ -329,6 +329,13 @@ public abstract class LimitedTask {
             }
         }
 
+        // 如果已经触发停止,让退出例程检测是否可以停止
+        if(_bDisableSubmit && nOnWorking == 0){
+            synchronized (_objTaskFin) {
+                _objTaskFin.notify();
+            }
+        }
+
         return nOnWorking;
     }
 
