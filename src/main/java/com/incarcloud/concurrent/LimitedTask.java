@@ -73,8 +73,9 @@ public abstract class LimitedTask {
      * @param val 最大并发数
      */
     public void setMax(int val){
+        boolean bRequireDispatching = (val > _max);
         _max = val;
-        dispatch();
+        if(bRequireDispatching) dispatch(true);
     }
 
     /**
@@ -231,7 +232,7 @@ public abstract class LimitedTask {
 
         _queueTask.add(tracking);
         _queueTaskCount.incrementAndGet();
-        dispatch();
+        dispatch(true);
     }
 
     // 结束任务
@@ -240,17 +241,21 @@ public abstract class LimitedTask {
         if(_mapOnWorking.remove(tracking) == null){
             s_logger.warn("可能重复调用了onFinished.run()方法 {}", tracking.getTask());
         }else {
+            // 性能计数
+            long tmNow = System.currentTimeMillis();
+            _perf.put(tracking.getExecTM() - tracking.getCreatedTM(), tmNow - tracking.getExecTM());
+
             // 归还并发容量
             int nOnWorking = _atomOnWorking.decrementAndGet();
             if(nOnWorking < 0){
                 s_logger.warn("并发数异常: {}", nOnWorking);
             }
 
-            // 由于返还了并发数，可以再次分配新任务
-            dispatch();
-            // 性能计数
-            long tmNow = System.currentTimeMillis();
-            _perf.put(tracking.getExecTM() - tracking.getCreatedTM(), tmNow - tracking.getExecTM());
+            // 如果此任务在dispatch环境中被同步调用,就不能再调用dispatch,否则会造成递归重入
+            if(!tracking.isInDispatchCtx()) {
+                // 由于返还了并发数，可以再次分配新任务
+                dispatch(false);
+            }
 
             // 如果已经触发停止,让退出例程检测是否可以停止
             if(_bDisableSubmit){
@@ -262,7 +267,7 @@ public abstract class LimitedTask {
     }
 
     // 分配任务到线程，返回当前的并发数
-    private int dispatch() {
+    private int dispatch(boolean bAsync) {
         int nRetry = 0;
         int nOnWorking = _atomOnWorking.get();
 
@@ -280,11 +285,21 @@ public abstract class LimitedTask {
                         if(_capacity > 0) _semaTaskCapacity.release();
                         // 任务跟踪
                         _mapOnWorking.put(tracking, tracking);
-                        // 执行任务
-                        _execSrv.submit(tracking::run);
                         // 性能计数
                         _perf.increasePerfCount();
                         nOnWorking++;
+                        if(bAsync || nOnWorking < _max) {
+                            // 异步执行任务
+                            tracking.setDispatchCtx(false);
+                            _execSrv.submit(tracking::run);
+                        }
+                        else{
+                            // 因为此时并发数已经到达max,不必再检查新任务了,
+                            // 直接在此线程上同步执行任务,以减少线程切换开销
+                            tracking.setDispatchCtx(true);
+                            tracking.run(); // 不要抛出异常,异常需要在内部处理掉
+                            nOnWorking = _atomOnWorking.get(); // 执行完成后,重新检查
+                        }
                     }
                     else {
                         // 队列中没有任务了,返还并发容量

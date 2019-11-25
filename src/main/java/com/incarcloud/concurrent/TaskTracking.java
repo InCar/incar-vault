@@ -13,6 +13,8 @@ public abstract class TaskTracking<T>{
     private long _tmExec;
     // 任务结束时调用此方法
     private final Action<TaskTracking> _actTaskFinished;
+    // 在dispatch环境中被同步调用的标志
+    private boolean _bInDispatchCtx = false;
 
     // 被跟踪的任务
     protected final T _task;
@@ -25,6 +27,18 @@ public abstract class TaskTracking<T>{
         _actTaskFinished = actTaskFinished;
         _tmCreated = System.currentTimeMillis();
     }
+
+    /**
+     * 是否在dispatch环境中被同步调用
+     * @return true代表在dispatch中被同步调用,false代表被异步调用
+     */
+    boolean isInDispatchCtx(){ return _bInDispatchCtx; }
+
+    /**
+     * 设置在dispatch环境中被同步调用的标志位
+     * @param bInDispatchCtx true代表在dispatch中被同步调用,false代表被异步调用
+     */
+    void setDispatchCtx(boolean bInDispatchCtx){ _bInDispatchCtx = bInDispatchCtx; }
 
     /**
      * 获取被跟踪的任务
