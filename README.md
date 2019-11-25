@@ -9,7 +9,7 @@
 <dependency>
     <groupId>com.incarcloud</groupId>
     <artifactId>incar-vault</artifactId>
-    <version>1.3.1</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 
