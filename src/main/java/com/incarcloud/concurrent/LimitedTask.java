@@ -240,6 +240,10 @@ public abstract class LimitedTask {
         if(_mapOnWorking.remove(tracking) == null){
             s_logger.warn("可能重复调用了onFinished.run()方法 {}", tracking.getTask());
         }else {
+            // 性能计数
+            long tmNow = System.currentTimeMillis();
+            _perf.put(tracking.getExecTM() - tracking.getCreatedTM(), tmNow - tracking.getExecTM());
+
             // 归还并发容量
             int nOnWorking = _atomOnWorking.decrementAndGet();
             if(nOnWorking < 0){
@@ -248,9 +252,6 @@ public abstract class LimitedTask {
 
             // 由于返还了并发数，可以再次分配新任务
             dispatch();
-            // 性能计数
-            long tmNow = System.currentTimeMillis();
-            _perf.put(tracking.getExecTM() - tracking.getCreatedTM(), tmNow - tracking.getExecTM());
 
             // 如果已经触发停止,让退出例程检测是否可以停止
             if(_bDisableSubmit){
